@@ -1,17 +1,18 @@
-FROM botpress/server:latest
+FROM bot press/server:latest
 
-# Ensure proper permissions
-USER root
-RUN chmod +x /botpress/bp
+# Set environment to production
+ENV NODE_ENV=production
 
-# Switch back to botpress user
-USER botpress
-
-# Set working directory
-WORKDIR /botpress
-
-# Expose port (Railway will override with $PORT)
+# Expose Botpress port (Railway will use $PORT)
 EXPOSE 3000
 
-# Use shell form to allow PORT variable expansion
-CMD sh -c "./bp --port ${PORT:-3000}"
+# Working directory
+WORKDIR /botpress
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/status || exit 1
+
+# Start Botpress with PORT variable support
+# If PORT is set by Railway, use it; otherwise default to 3000
+CMD ["sh", "-c", "exec ./bp --port ${PORT:-3000}"]
